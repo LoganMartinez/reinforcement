@@ -26,6 +26,7 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
+from argparse import Action
 import mdp, util
 
 from learningAgents import ValueEstimationAgent
@@ -62,6 +63,25 @@ class ValueIterationAgent(ValueEstimationAgent):
     def runValueIteration(self):
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
+        states = self.mdp.getStates()
+        for i in range(self.iterations):
+            print("iteration: " + str(i))
+            newValues = self.values
+            for state in states:
+                actions = self.mdp.getPossibleActions(state)
+                maxAction = None
+                bestQValue = None
+                for action in actions:
+                    qvalue = self.computeQValueFromValues(state,action)
+                    if maxAction == None or qvalue > bestQValue:
+                        maxAction = action
+                        bestQValue = qvalue
+                if bestQValue != None:
+                    if state == (2,1):
+                        print("qValue: " + str(bestQValue))
+                    newValues[state] = bestQValue           
+            self.values = newValues
+        return self.values
 
 
     def getValue(self, state):
@@ -77,7 +97,18 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        ret = 0
+        
+
+        transitions = self.mdp.getTransitionStatesAndProbs(state,action)
+        for (newState, prob) in transitions:
+            if state == (2,1) and action == "north":
+                print("P: " + str(prob) + " V: " + str(self.values[newState]))
+            ret += prob * (self.mdp.getReward(state,action,newState) + self.discount * self.values[newState])
+        if state == (2,1):
+            print()
+        return ret
+        
 
     def computeActionFromValues(self, state):
         """
@@ -89,7 +120,15 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        actions = self.mdp.getPossibleActions(state)
+        bestAction = None
+        bestQValue = None
+        for action in actions:
+            qvalue = self.computeQValueFromValues(state, action)
+            if bestAction == None or qvalue > bestQValue:
+                bestAction = action
+                bestQValue = qvalue
+        return bestAction
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
@@ -130,6 +169,18 @@ class AsynchronousValueIterationAgent(ValueIterationAgent):
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        for i in range(self.iterations):
+            states = self.mdp.getStates()
+            state = states[i % len(states)]
+            if not self.mdp.isTerminal(state):
+                actions = self.mdp.getPossibleActions(state)
+                bestQ = None
+                for action in actions:
+                    qValue = self.computeQValueFromValues(state,action)
+                    if bestQ == None or qValue > bestQ:
+                        bestQ = qValue
+                self.values[state] = bestQ
+
 
 class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
     """
