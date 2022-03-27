@@ -201,4 +201,52 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
 
     def runValueIteration(self):
         "*** YOUR CODE HERE ***"
+        states = self.mdp.getStates()
+        predecessors = dict()
+        pqueue = util.PriorityQueue()
+        for state in states:
+            if not self.mdp.isTerminal(state):
+                actions = self.mdp.getPossibleActions(state)
+                highestQ = None
+                for action in actions:
+                    #setting up predecessors
+                    transitions = self.mdp.getTransitionStatesAndProbs(state,action)
+                    for (newState, prob) in transitions:
+                        if not newState in predecessors:
+                            predecessors[newState] = { state }
+                        else:
+                            predecessors[newState].add(state)
 
+                    #determining best action
+                    qValue = self.computeQValueFromValues(state,action)
+                    if highestQ == None or qValue > highestQ:
+                        highestQ = qValue
+                diff = abs(self.values[state]-highestQ)
+                pqueue.update(state, -diff) #why update not push?
+        for i in range(self.iterations):
+            if not pqueue.isEmpty():
+                state = pqueue.pop()
+                if not self.mdp.isTerminal(state):
+                    # "update value of state in self.values" ???
+                    actions = self.mdp.getPossibleActions(state)
+                    highestQ = None # abstract this pls
+                    for action in actions:
+                        qValue = self.computeQValueFromValues(state,action)
+                        if highestQ == None or qValue > highestQ:
+                            highestQ = qValue
+                    # self.values[state] = abs(self.values[state]-highestQ) #how can value be negative (like in correct solution) if we need to use abs?
+                    self.values[state] = highestQ
+                    #predecessors
+                    for predecessor in predecessors[state]:
+                        pActions = self.mdp.getPossibleActions(predecessor)
+                        highestQ = None
+                        for action in pActions:
+                            qValue = self.computeQValueFromValues(predecessor,action)
+                            if highestQ == None or qValue > highestQ:
+                                highestQ = qValue
+                        diff = abs(self.values[predecessor] - highestQ)
+                        if diff > self.theta:
+                            pqueue.update(predecessor, -diff) #why update instead of push?
+
+
+                
