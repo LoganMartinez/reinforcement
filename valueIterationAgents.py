@@ -79,7 +79,7 @@ class ValueIterationAgent(ValueEstimationAgent):
                 if bestQValue != None:
                     if state == (2,1):
                         print("qValue: " + str(bestQValue))
-                    newValues[state] = bestQValue           
+                    newValues[state] = bestQValue
             self.values = newValues
         return self.values
 
@@ -173,12 +173,14 @@ class AsynchronousValueIterationAgent(ValueIterationAgent):
             states = self.mdp.getStates()
             state = states[i % len(states)]
             if not self.mdp.isTerminal(state):
-                actions = self.mdp.getPossibleActions(state)
-                bestQ = None
-                for action in actions:
-                    qValue = self.computeQValueFromValues(state,action)
-                    if bestQ == None or qValue > bestQ:
-                        bestQ = qValue
+                bestAction = self.computeActionFromValues(state)
+                bestQ = self.computeQValueFromValues(state,bestAction)
+                # actions = self.mdp.getPossibleActions(state)
+                # bestQ = None
+                # for action in actions:
+                #     qValue = self.computeQValueFromValues(state,action)
+                #     if bestQ == None or qValue > bestQ:
+                #         bestQ = qValue
                 self.values[state] = bestQ
 
 
@@ -204,10 +206,12 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
         states = self.mdp.getStates()
         predecessors = dict()
         pqueue = util.PriorityQueue()
+
+        #initialization step
         for state in states:
             if not self.mdp.isTerminal(state):
                 actions = self.mdp.getPossibleActions(state)
-                highestQ = None
+                bestQ = None
                 for action in actions:
                     #setting up predecessors
                     transitions = self.mdp.getTransitionStatesAndProbs(state,action)
@@ -219,34 +223,39 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
 
                     #determining best action
                     qValue = self.computeQValueFromValues(state,action)
-                    if highestQ == None or qValue > highestQ:
-                        highestQ = qValue
-                diff = abs(self.values[state]-highestQ)
-                pqueue.update(state, -diff) #why update not push?
+                    if bestQ == None or qValue > bestQ:
+                        bestQ = qValue
+                diff = abs(self.values[state]-bestQ)
+                pqueue.update(state, -diff)
+
+        # iteration step
         for i in range(self.iterations):
             if not pqueue.isEmpty():
                 state = pqueue.pop()
                 if not self.mdp.isTerminal(state):
-                    # "update value of state in self.values" ???
-                    actions = self.mdp.getPossibleActions(state)
-                    highestQ = None # abstract this pls
-                    for action in actions:
-                        qValue = self.computeQValueFromValues(state,action)
-                        if highestQ == None or qValue > highestQ:
-                            highestQ = qValue
-                    # self.values[state] = abs(self.values[state]-highestQ) #how can value be negative (like in correct solution) if we need to use abs?
-                    self.values[state] = highestQ
+                    # actions = self.mdp.getPossibleActions(state)
+                    # highestQ = None # abstract this pls
+                    # for action in actions:
+                    #     qValue = self.computeQValueFromValues(state,action)
+                    #     if highestQ == None or qValue > highestQ:
+                    #         highestQ = qValue
+                    bestAction = self.computeActionFromValues(state)
+                    bestQ = self.computeQValueFromValues(state,bestAction) # does this add complexity?
+                    # self.values[state] = abs(self.values[state]-bestQ) #how can value be negative (like in correct solution) if we need to use abs?
+                    self.values[state] = bestQ
                     #predecessors
                     for predecessor in predecessors[state]:
-                        pActions = self.mdp.getPossibleActions(predecessor)
-                        highestQ = None
-                        for action in pActions:
-                            qValue = self.computeQValueFromValues(predecessor,action)
-                            if highestQ == None or qValue > highestQ:
-                                highestQ = qValue
-                        diff = abs(self.values[predecessor] - highestQ)
+                        # pActions = self.mdp.getPossibleActions(predecessor)
+                        # pBestQ = None
+                        # for action in pActions:
+                        #     qValue = self.computeQValueFromValues(predecessor,action)
+                        #     if pBestQ == None or qValue > pBestQ:
+                        #         pBestQ = qValue
+                        pBestAction = self.computeActionFromValues(predecessor)
+                        pBestQ = self.computeQValueFromValues(predecessor, pBestAction)
+                        diff = abs(self.values[predecessor] - pBestQ)
                         if diff > self.theta:
-                            pqueue.update(predecessor, -diff) #why update instead of push?
+                            pqueue.update(predecessor, -diff)
 
 
                 

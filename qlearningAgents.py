@@ -108,16 +108,17 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state)
         action = None
         "*** YOUR CODE HERE ***"
-        if util.flipCoin(self.epsilon) and len(legalActions) > 0:
-            action = legalActions[random.choice(legalActions)]
-        else:
-            bestQ = None
-            for a in legalActions:
-                qValue = self.getQValue(state, a)
-                if bestQ == None or qValue > bestQ:
-                    action = a
-                    bestQ = qValue
-        return action
+        # if util.flipCoin(self.epsilon) and len(legalActions) > 0:
+        #     action = legalActions[random.choice(legalActions)]
+        # else:
+        #     bestQ = None
+        #     for a in legalActions:
+        #         qValue = self.getQValue(state, a)
+        #         if bestQ == None or qValue > bestQ:
+        #             action = a
+        #             bestQ = qValue
+        # return action
+        util.raiseNotDefined
 
     def update(self, state, action, nextState, reward):
         """
